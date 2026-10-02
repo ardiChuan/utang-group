@@ -15,8 +15,9 @@ Fitur:
 
 1. Buat project baru di https://supabase.com/dashboard (region terdekat: Singapore).
 2. Buka **SQL Editor → New query**, lalu paste seluruh isi `schema.sql`.
-3. **Sebelum Run**, ganti `'GANTI-PIN-INI'` di baris paling bawah dengan PIN grup kamu.
-   Minimal 6 karakter. Lebih panjang lebih aman, misalnya `kopi-senja-2026`.
+3. **Sebelum Run**, ganti `'GANTI-PIN-INI'` di baris paling bawah dengan PIN grup kamu,
+   **langsung di SQL Editor**. Jangan edit `schema.sql` di folder project, supaya PIN asli tidak masuk git.
+   Minimal 6 karakter, lebih panjang lebih aman. Kalau placeholder lupa diganti, login otomatis ditolak.
 4. Klik **Run**. Hasilnya harus "Success".
 5. Buka **Project Settings → API Keys** (atau tombol **Connect**), lalu salin:
    - **Project URL** → `https://xxxx.supabase.co`
@@ -43,6 +44,7 @@ window.UTANG_CONFIG = {
 2. Di https://vercel.com/new, import repo tersebut.
 3. Framework Preset: **Other**. Build Command & Output Directory **kosongkan**.
 4. Deploy. Selesai, dapat link `https://nama-project.vercel.app`.
+5. Cek `https://nama-project.vercel.app/schema.sql`. Harus **404** (diatur oleh `.vercelignore`).
 
 **Cara B: tanpa GitHub**
 ```bash
@@ -56,6 +58,7 @@ npx vercel --prod
 2. Masukkan PIN grup.
 3. Orang pertama mengetik namanya, lalu menambah anggota lain di tab **Anggota**.
 4. Opsional: tombol Share → **Add to Home Screen** supaya muncul seperti app.
+   Penyimpanan app Home Screen terpisah dari Safari, jadi PIN perlu dimasukkan sekali lagi. Ini normal.
 5. Kirim link + PIN ke grup. Tiap orang pilih namanya sendiri.
 
 ## Catatan penting

@@ -74,7 +74,8 @@ set search_path = public, extensions as $$
 declare v_hash text;
 begin
   select pin_hash into v_hash from settings where id = 1;
-  if v_hash is null then
+  -- PIN placeholder tidak pernah boleh dipakai login.
+  if v_hash is null or extensions.crypt('GANTI-PIN-INI', v_hash) = v_hash then
     raise exception 'PIN_BELUM_DISET';
   end if;
   if p_pin is null or extensions.crypt(p_pin, v_hash) <> v_hash then
@@ -308,9 +309,13 @@ grant execute on function
   public.change_pin(text, bigint, text)
   to anon, authenticated;
 
+notify pgrst, 'reload schema';
+
 -- =====================================================================
--- SET PIN GRUP — ganti 'GANTI-PIN-INI' dengan PIN kamu (min 6 karakter,
--- lebih panjang lebih aman). Menjalankan ulang baris ini = reset PIN.
+-- SET PIN GRUP: ganti placeholder di bawah dengan PIN kamu (min 6 karakter)
+-- HANYA di SQL Editor Supabase. JANGAN simpan PIN asli di file ini.
+-- Selama placeholder belum diganti, login akan ditolak.
+-- Menjalankan ulang baris ini = reset PIN.
 -- =====================================================================
 insert into public.settings (id, pin_hash)
 values (1, extensions.crypt('GANTI-PIN-INI', extensions.gen_salt('bf')))
