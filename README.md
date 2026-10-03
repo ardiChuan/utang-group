@@ -81,6 +81,23 @@ Catatan:
    Penyimpanan app Home Screen terpisah dari Safari, jadi PIN perlu dimasukkan sekali lagi. Ini normal.
 5. Kirim link + PIN ke grup. Tiap orang pilih namanya sendiri.
 
+## Development lokal
+
+Butuh Node.js 20+. Sekali saja: `npm install`.
+
+| Perintah | Isi |
+|---|---|
+| `npm run dev` | Server lokal + **database lokal** (`.localdb/`), PIN `local123`. Aman, tidak menyentuh data grup. |
+| `npm run dev:mock` | Sama, tapi scan struk pakai data palsu (tanpa Gemini, tanpa kuota). |
+| `npm run dev:reset` | Hapus database lokal, mulai dari kosong. |
+| `npm run dev:prod` | Server lokal tapi pakai **Supabase asli**. Hati-hati, ini data grup beneran. |
+| `npm test` | Tes otomatis: logika saldo/split, SQL + keamanan, API scan. |
+
+- Buka `http://localhost:3000`. Dari iPhone (Wi-Fi sama): `http://IP-LAPTOP:3000` (alamat muncul saat server start).
+- Scan struk dengan Gemini asli secara lokal: salin `.env.example` jadi `.env.local`, isi `GEMINI_API_KEY`.
+- Mode lokal ditandai badge **LOKAL** di atas, supaya tidak tertukar dengan versi production.
+- `.env.local`, `.localdb/`, `dev/`, `test/` tidak ikut ke Vercel.
+
 ## Catatan penting
 
 - **Supabase free tier mem-pause project** kalau tidak dipakai sekitar 1 minggu.

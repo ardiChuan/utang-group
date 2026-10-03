@@ -1,0 +1,16 @@
+{
+  "name": "utang-grup",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Pencatat utang-piutang grup (Vercel + Supabase)",
+  "scripts": {
+    "dev": "node dev/server.mjs",
+    "dev:mock": "node dev/server.mjs --mock",
+    "dev:reset": "node dev/server.mjs --reset",
+    "dev:prod": "node dev/server.mjs --supabase",
+    "test": "node --test \"test/*.test.*\""
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.3.0"
+  }
+}

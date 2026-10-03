@@ -1,3 +1,7 @@
 schema.sql
 README.md
 .gitignore
+.env.example
+dev/
+test/
+.localdb/

@@ -252,7 +252,7 @@
   function viewPin() {
     return `<form class="gate" data-form="pin" autocomplete="off">
       <h1>Utang Grup</h1>
-      <p>Masukkan PIN grup.${demo ? ' Mode demo: PIN <b>' + window.UtangDemo.PIN + '</b>' : ''}</p>
+      <p>Masukkan PIN grup.${demo ? ' Mode demo: PIN <b>' + window.UtangDemo.PIN + '</b>' : ''}${cfg.LOCAL ? ' Server lokal: PIN <b>' + esc(cfg.LOCAL_PIN) + '</b>' : ''}</p>
       <div class="field"><input class="input" type="password" name="pin" autocomplete="current-password" placeholder="PIN grup" required autofocus></div>
       ${S.gateError ? `<p class="neg small" style="margin:-4px 2px 16px">${esc(S.gateError)}</p>` : ''}
       <button class="btn block" type="submit">Masuk</button>
@@ -287,7 +287,7 @@
     const body = { saldo: viewSaldo, tambah: viewTambah, riwayat: viewRiwayat, anggota: viewAnggota }[S.tab]();
     return `
       <header class="topbar"><div class="wrap">
-        <h1>Utang Grup${demo ? ' <span class="badge">DEMO</span>' : ''}</h1>
+        <h1>Utang Grup${demo ? ' <span class="badge">DEMO</span>' : ''}${cfg.LOCAL ? ' <span class="badge">LOKAL</span>' : ''}</h1>
         <span class="chip">${esc(memberName(S.meId))}</span>
         <button class="icon-btn${S.loading ? ' spin' : ''}" data-act="refresh" aria-label="Muat ulang">${ICON.refresh}</button>
       </div></header>
