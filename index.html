@@ -15,7 +15,7 @@
 <body>
   <div id="root"></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <input id="scan-file" type="file" accept="image/*" hidden>
+  <input id="scan-file" class="visually-hidden" type="file" accept="image/*" tabindex="-1" aria-hidden="true">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>

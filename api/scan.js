@@ -46,7 +46,9 @@ async function checkPin(pin) {
   if (!url || !key) throw Object.assign(new Error('Server belum dikonfigurasi (SUPABASE_URL/SUPABASE_ANON_KEY).'), { status: 500 });
   const r = await fetch(url.replace(/\/$/, '') + '/rest/v1/rpc/check_pin', {
     method: 'POST',
-    headers: { apikey: key, 'Content-Type': 'application/json' },
+    // Key lama (JWT eyJ...) butuh Bearer juga; key baru sb_publishable_ cukup apikey.
+    headers: Object.assign({ apikey: key, 'Content-Type': 'application/json' },
+      key.startsWith('eyJ') ? { Authorization: 'Bearer ' + key } : {}),
     body: JSON.stringify({ p_pin: String(pin || '') }),
   });
   if (r.ok) return;

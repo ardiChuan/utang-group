@@ -604,8 +604,8 @@
       const url = URL.createObjectURL(file);
       const img = new Image();
       img.onload = () => {
-        const max = 2000;
-        const s = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+        // Struk panjang & sempit: batasi lebar 1200px, tinggi sampai 4000px.
+        const s = Math.min(1, 1200 / img.naturalWidth, 4000 / img.naturalHeight);
         const c = document.createElement('canvas');
         c.width = Math.round(img.naturalWidth * s);
         c.height = Math.round(img.naturalHeight * s);

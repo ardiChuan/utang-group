@@ -208,6 +208,8 @@ select.input {
 .form-actions .btn { flex: 1; }
 
 /* ---------- Scan struk ---------- */
+/* Bukan display:none — label→input tersembunyi kadang tidak jalan di iOS Safari */
+.visually-hidden { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; left: 0; top: 0; }
 .scan-btn { display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
 .scan-btn svg { width: 22px; height: 22px; }
 .scan-btn.is-busy { opacity: .7; cursor: progress; }
