@@ -119,6 +119,15 @@ set search_path = public, extensions as $$
 $$;
 
 -- ---------- RPC publik (semua wajib PIN) ----------
+-- Dipakai Vercel function /api/scan untuk memastikan yang scan anggota grup.
+create or replace function public.check_pin(p_pin text)
+returns boolean language plpgsql security definer
+set search_path = public, extensions as $$
+begin
+  perform assert_pin(p_pin);
+  return true;
+end $$;
+
 create or replace function public.get_state(p_pin text)
 returns jsonb language plpgsql security definer
 set search_path = public, extensions as $$
@@ -294,6 +303,7 @@ end $$;
 revoke execute on function
   public.assert_pin(text), public.assert_actor(bigint),
   public.member_balance(bigint), public.tx_json(bigint),
+  public.check_pin(text),
   public.get_state(text), public.add_member(text, bigint, text),
   public.update_member(text, bigint, bigint, text, boolean),
   public.save_transaction(text, bigint, bigint, text, bigint, bigint, text, date, jsonb),
@@ -302,6 +312,7 @@ revoke execute on function
   from public, anon, authenticated;
 
 grant execute on function
+  public.check_pin(text),
   public.get_state(text), public.add_member(text, bigint, text),
   public.update_member(text, bigint, bigint, text, boolean),
   public.save_transaction(text, bigint, bigint, text, bigint, bigint, text, date, jsonb),

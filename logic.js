@@ -51,7 +51,27 @@
     return out;
   }
 
-  const api = { computeBalances, equalSplit, simplify };
+  // Bagi total struk ke anggota berdasarkan item yang mereka ambil.
+  // Item dibagi rata ke pemiliknya; selisih (pajak/service/diskon) ikut proporsional.
+  // Pembulatan largest-remainder supaya jumlahnya pas dengan total.
+  function allocateReceipt(total, items) {
+    const w = {};
+    for (const it of items) {
+      if (!(it.price > 0) || !it.who.length) continue;
+      for (const id of it.who) w[id] = (w[id] || 0) + it.price / it.who.length;
+    }
+    const ids = Object.keys(w).map(Number).sort((a, b) => a - b);
+    const sumW = ids.reduce((a, id) => a + w[id], 0);
+    if (!ids.length || !(sumW > 0) || !(total > 0)) return [];
+    const raw = ids.map((id) => ({ id, v: (total * w[id]) / sumW }));
+    const out = raw.map((r) => ({ member_id: r.id, amount: Math.floor(r.v), frac: r.v - Math.floor(r.v) }));
+    let rem = total - out.reduce((a, s) => a + s.amount, 0);
+    const order = out.slice().sort((a, b) => b.frac - a.frac || a.member_id - b.member_id);
+    for (let i = 0; rem > 0; i = (i + 1) % order.length, rem--) order[i].amount++;
+    return out.map(({ member_id, amount }) => ({ member_id, amount })).filter((s) => s.amount > 0);
+  }
+
+  const api = { computeBalances, equalSplit, simplify, allocateReceipt };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.UtangLogic = api;
 })(typeof window !== 'undefined' ? window : globalThis);

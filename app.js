@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const { computeBalances, equalSplit, simplify } = window.UtangLogic;
+  const { computeBalances, equalSplit, simplify, allocateReceipt } = window.UtangLogic;
   const cfg = window.UTANG_CONFIG || {};
   const root = document.getElementById('root');
   const toastEl = document.getElementById('toast');
@@ -25,6 +25,8 @@
     form: null,
     sheet: null,
     gateError: '',
+    scan: null,
+    scanning: false,
   };
 
   // ---------- Util ----------
@@ -69,6 +71,7 @@
     split: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M12 4v16M4 12h16"/></svg>',
     debt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
     settlement: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
   };
 
   // ---------- Supabase ----------
@@ -370,7 +373,9 @@
         ? `<div class="card">${f.participants.map((id) => `<div class="split-row"><span class="name">${esc(memberName(id))}</span>
             <input class="input" data-f="custom" data-id="${id}" inputmode="numeric" placeholder="0" value="${fmtInput(f.custom[id] || 0)}"></div>`).join('')}</div>`
         : '';
-      body = `${amountField}${noteField}
+      const scanBtn = `<div class="field">
+        <label class="btn ghost block scan-btn${S.scanning ? ' is-busy' : ''}" ${S.scanning ? '' : 'for="scan-file"'}>${ICON.camera}<span>${S.scanning ? 'Membaca struk…' : 'Scan struk'}</span></label></div>`;
+      body = `${scanBtn}${amountField}${noteField}
         <div class="field"><label for="f-payer">Dibayar oleh</label>
           <select id="f-payer" class="input" data-f="payer">${memberOptions(f.payer)}</select></div>
         <div class="field"><span class="lbl">Dibagi ke <button type="button" class="btn ghost sm" style="margin-left:6px;min-height:28px" data-act="toggle-all">${f.participants.length === activeMembers().length ? 'Kosongkan' : 'Semua'}</button></span>
@@ -542,6 +547,8 @@
           <button class="btn danger" data-act="delete-tx" data-id="${t.id}">Hapus</button>
           <button class="btn ghost" data-act="close-sheet">Tutup</button>
         </div>`;
+    } else if (S.sheet.type === 'scan') {
+      inner = viewScanSheet();
     } else if (S.sheet.type === 'pin') {
       inner = `<form data-form="change-pin" autocomplete="off">
         <h2>Ganti PIN grup</h2>
@@ -554,6 +561,128 @@
     }
     return `<div class="sheet-backdrop" data-act="backdrop"><div class="sheet" role="dialog" aria-modal="true">${inner}</div></div>`;
   }
+
+  // ----- Scan struk -----
+  function scanAlloc() {
+    const sc = S.scan;
+    return allocateReceipt(sc.total, sc.items);
+  }
+  function scanPreview() {
+    const sc = S.scan;
+    const itemsSum = sc.items.reduce((a, it) => a + (it.price || 0), 0);
+    const extra = sc.total - itemsSum;
+    const unassigned = sc.items.filter((it) => it.price > 0 && !it.who.length).length;
+    const lines = scanAlloc().map((s) => `<div class="row"><div class="grow">${esc(memberName(s.member_id))}</div><div class="amt">${rp(s.amount)}</div></div>`).join('');
+    return `<p class="hint muted">Item ${rp(itemsSum)}${extra ? ` · ${extra > 0 ? 'pajak/service' : 'diskon'} ${rp(Math.abs(extra))} dibagi proporsional` : ''}</p>
+      ${unassigned ? `<p class="hint neg">${unassigned} item belum dipilih orangnya.</p>` : ''}
+      ${lines ? `<div class="card" style="margin-top:8px">${lines}</div>` : ''}`;
+  }
+  function viewScanSheet() {
+    const sc = S.scan;
+    const people = activeMembers();
+    const items = sc.items.map((it, i) => `<div class="scan-item">
+        <div class="scan-head"><span class="scan-name">${esc(it.name)}${it.qty > 1 ? ` <span class="muted">×${it.qty}</span>` : ''}</span>
+          <input class="input scan-price" data-sf="price" data-i="${i}" inputmode="numeric" value="${fmtInput(it.price)}" aria-label="Harga ${esc(it.name)}"></div>
+        <div class="chips sm">
+          ${people.map((m) => `<button type="button" data-act="scan-who" data-i="${i}" data-id="${m.id}" aria-pressed="${it.who.includes(m.id)}">${esc(m.name)}</button>`).join('')}
+          <button type="button" data-act="scan-all" data-i="${i}" class="chip-all">${it.who.length === people.length ? 'Kosong' : 'Semua'}</button>
+        </div></div>`).join('');
+    return `<h2>${esc(sc.merchant || 'Struk')}</h2>
+      <p class="muted small" style="margin:4px 4px 12px">Tap nama orang yang ikut tiap item. Item bareng dibagi rata.</p>
+      ${items || '<div class="empty">Tidak ada item terbaca. Isi total lalu bagi manual.</div>'}
+      <div class="field" style="margin-top:16px"><label for="scan-total">Total struk</label>
+        <div class="money-wrap"><span>Rp</span><input id="scan-total" class="input money" data-sf="total" inputmode="numeric" value="${fmtInput(sc.total)}"></div></div>
+      <div id="scan-preview">${scanPreview()}</div>
+      <div class="stack">
+        <button class="btn" data-act="scan-apply">Pakai pembagian ini</button>
+        <button class="btn ghost" data-act="close-sheet">Batal</button>
+      </div>`;
+  }
+
+  function fileToJpegB64(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const max = 2000;
+        const s = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * s);
+        c.height = Math.round(img.naturalHeight * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL('image/jpeg', 0.85).split(',')[1]);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Gambar tidak bisa dibaca.')); };
+      img.src = url;
+    });
+  }
+
+  async function runScan(file) {
+    if (S.scanning) return;
+    S.scanning = true;
+    render();
+    try {
+      const image = await fileToJpegB64(file);
+      let res;
+      try {
+        res = await fetch('/api/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: S.pin, image }),
+        });
+      } catch (_) {
+        throw new Error('Gagal konek ke server scan.');
+      }
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data) {
+        if (res.status === 404 || !data) throw new Error('Scan struk hanya jalan di versi yang sudah di-deploy ke Vercel.');
+        if (data.error === 'PIN_SALAH') { lockOut('PIN salah atau sudah diganti.'); return; }
+        throw new Error(data.error || 'Gagal membaca struk.');
+      }
+      if (!data.items.length && !data.total) throw new Error('Struk tidak terbaca, coba foto lebih dekat & terang.');
+      S.scan = {
+        merchant: data.merchant,
+        date: data.date,
+        total: data.total,
+        items: data.items.map((it) => ({ name: it.name, qty: it.qty, price: it.price, who: [] })),
+      };
+      S.sheet = { type: 'scan' };
+    } catch (e) {
+      toast(e.message, true);
+    } finally {
+      S.scanning = false;
+      render();
+    }
+  }
+
+  function applyScan() {
+    const sc = S.scan;
+    if (!(sc.total > 0)) { toast('Isi total struk.', true); return; }
+    if (sc.items.some((it) => it.price > 0 && !it.who.length)) { toast('Masih ada item yang belum dipilih orangnya.', true); return; }
+    const shares = scanAlloc();
+    if (!shares.length) { toast('Pilih orang untuk minimal satu item.', true); return; }
+    const old = S.form || newForm('split');
+    const f = Object.assign(newForm('split'), { id: old.id, payer: old.payer || S.meId });
+    f.amount = sc.total;
+    f.note = sc.merchant || old.note;
+    if (sc.date) f.date = sc.date;
+    f.mode = 'custom';
+    f.participants = shares.map((s) => s.member_id);
+    f.custom = {};
+    for (const s of shares) f.custom[s.member_id] = s.amount;
+    S.form = f;
+    S.scan = null;
+    S.sheet = null;
+    render();
+    toast('Cek "Dibayar oleh", lalu Simpan');
+  }
+
+  document.getElementById('scan-file').addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (file) runScan(file);
+  });
 
   // ---------- Events ----------
   root.addEventListener('click', (e) => {
@@ -619,8 +748,24 @@
 
       case 'hist': S.histView = el.dataset.v; render(); break;
       case 'open-tx': S.sheet = { type: 'tx', id }; render(); break;
-      case 'close-sheet':
-      case 'backdrop': S.sheet = null; render(); break;
+      case 'backdrop':
+        if (S.sheet && S.sheet.type === 'scan') break; // jangan hilangkan pilihan karena salah tap
+        S.sheet = null; render(); break;
+      case 'close-sheet': S.sheet = null; S.scan = null; render(); break;
+      case 'scan-who': {
+        const it = S.scan.items[Number(el.dataset.i)];
+        it.who = it.who.includes(id) ? it.who.filter((x) => x !== id) : [...it.who, id];
+        rerenderSheet();
+        break;
+      }
+      case 'scan-all': {
+        const it = S.scan.items[Number(el.dataset.i)];
+        const all = activeMembers().map((m) => m.id);
+        it.who = it.who.length === all.length ? [] : all;
+        rerenderSheet();
+        break;
+      }
+      case 'scan-apply': applyScan(); break;
       case 'edit-tx': {
         const t = S.data.transactions.find((x) => x.id === id);
         if (!t) break;
@@ -683,8 +828,27 @@
     }
   });
 
+  // Render ulang isi sheet saja, posisi scroll sheet tetap.
+  function rerenderSheet() {
+    const sheet = document.querySelector('.sheet');
+    if (!sheet) { render(); return; }
+    const top = sheet.scrollTop;
+    sheet.innerHTML = viewScanSheet();
+    sheet.scrollTop = top;
+  }
+
   function onFieldInput(e) {
     const el = e.target;
+    const sf = el.dataset && el.dataset.sf;
+    if (sf && S.scan) {
+      const n = parseAmt(el.value);
+      el.value = fmtInput(n);
+      if (sf === 'total') S.scan.total = n;
+      else S.scan.items[Number(el.dataset.i)].price = n;
+      const p = document.getElementById('scan-preview');
+      if (p) p.innerHTML = scanPreview();
+      return;
+    }
     const k = el.dataset && el.dataset.f;
     if (!k || !S.form) return;
     const f = S.form;

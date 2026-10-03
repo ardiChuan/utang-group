@@ -52,6 +52,26 @@ npx vercel        # login, ikuti prompt, terima default
 npx vercel --prod
 ```
 
+## 3b. Scan struk (Gemini, gratis)
+
+1. Buat API key di https://aistudio.google.com/apikey (gratis, login akun Google).
+2. Di Vercel → project → **Settings → Environment Variables**, tambahkan:
+   | Name | Value |
+   |---|---|
+   | `GEMINI_API_KEY` | key dari AI Studio |
+   | `SUPABASE_URL` | sama dengan di `config.js` |
+   | `SUPABASE_ANON_KEY` | sama dengan di `config.js` |
+   | `GEMINI_MODEL` | opsional, default `gemini-flash-latest` |
+3. **Redeploy** (Deployments → titik tiga → Redeploy) supaya env terbaca.
+
+Cara pakai: Tambah → Split bill → **Scan struk** → foto struk → tap nama orang di tiap item → **Pakai pembagian ini** → cek "Dibayar oleh" → Simpan.
+Pajak/service/diskon (selisih antara total dan jumlah item) dibagi proporsional.
+
+Catatan:
+- Server mengecek PIN grup dulu sebelum memanggil Gemini, jadi orang luar tidak bisa memakai kuota kamu.
+- Foto struk dikirim ke Google. Data free tier Gemini bisa dipakai Google untuk melatih model.
+- Scan **tidak jalan** di server lokal / mode demo (butuh Vercel function).
+
 ## 4. Pakai di iPhone
 
 1. Buka link Vercel di **Safari**.
@@ -80,6 +100,8 @@ npx vercel --prod
 | `styles.css` | Tampilan (mobile-first, dark mode otomatis) |
 | `config.js` | URL + anon key Supabase |
 | `schema.sql` | Tabel, keamanan, fungsi RPC |
+| `api/scan.js` | Vercel function: cek PIN → Gemini baca struk |
+| `demo.js` | Mode demo lokal (localStorage) kalau config belum diisi |
 
 Cara kerja saldo: untuk tiap transaksi, `payer += amount` dan tiap `share.member -= share.amount`.
 Saldo positif berarti orang lain utang ke dia, negatif berarti dia yang utang.
