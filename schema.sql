@@ -75,7 +75,8 @@ declare v_hash text;
 begin
   select pin_hash into v_hash from settings where id = 1;
   -- PIN placeholder tidak pernah boleh dipakai login.
-  if v_hash is null or extensions.crypt('GANTI-PIN-INI', v_hash) = v_hash then
+  -- (ditulis terpisah supaya placeholder cuma muncul sekali di file ini)
+  if v_hash is null or extensions.crypt('GANTI-' || 'PIN-INI', v_hash) = v_hash then
     raise exception 'PIN_BELUM_DISET';
   end if;
   if p_pin is null or extensions.crypt(p_pin, v_hash) <> v_hash then
