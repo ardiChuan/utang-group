@@ -9,6 +9,7 @@ Fitur:
 - **Bayar utang / Tandai lunas**: pelunasan, termasuk dari saran transfer
 - **Simplify**: saran transfer paling sedikit supaya semua lunas
 - **Riwayat** semua transaksi, bisa diedit/dihapus, plus **log aktivitas** (siapa ubah apa)
+- **Foto nota**: otomatis tersimpan dari scan struk, atau dilampirkan manual. Lihat dari detail transaksi (ikon 📎)
 - Login: **PIN grup** + pilih nama. Anggota diatur dari dalam app.
 
 ## 1. Setup Supabase
@@ -92,6 +93,7 @@ Butuh Node.js 20+. Sekali saja: `npm install`.
 | `npm run dev:reset` | Hapus database lokal, mulai dari kosong. |
 | `npm run dev:prod` | Server lokal tapi pakai **Supabase asli**. Hati-hati, ini data grup beneran. |
 | `npm test` | Tes otomatis: logika saldo/split, SQL + keamanan, API scan. |
+| `npm run sql:copy` | Salin `schema.sql` **tanpa baris set PIN** ke clipboard. Dipakai untuk update database Supabase asli setelah schema berubah (PIN grup tidak ter-reset). |
 
 - Buka `http://localhost:3000`. Dari iPhone (Wi-Fi sama): `http://IP-LAPTOP:3000` (alamat muncul saat server start).
 - Scan struk dengan Gemini asli secara lokal: salin `.env.example` jadi `.env.local`, isi `GEMINI_API_KEY`.

@@ -23,6 +23,28 @@ test('placeholder PIN tidak bisa dipakai login', async () => {
   await rejects(db, "select get_state('GANTI-PIN-INI')", [], /PIN_BELUM_DISET/);
 });
 
+test('nota: simpan, lihat, hapus, terkunci', async () => {
+  const db = await freshDb(PIN);
+  const a = (await q(db, "select add_member($1,null,'Andi') id", [PIN]))[0].id;
+  const t = (await q(db, "select save_transaction($1,$2,null,'split',$2,1000,'x',null,$3::jsonb) id",
+    [PIN, a, JSON.stringify([{ member_id: a, amount: 1000 }])]))[0].id;
+  await rejects(db, 'select set_receipt($1,$2,$3,$4)', ['salah', a, t, 'QUJD'], /PIN_SALAH/);
+  await rejects(db, 'select set_receipt($1,$2,$3,$4)', [PIN, a, t, '<script>'], /tidak valid/);
+  await rejects(db, 'select set_receipt($1,$2,$3,$4)', [PIN, a, 9999, 'QUJD'], /tidak ditemukan/);
+  await q(db, 'select set_receipt($1,$2,$3,$4)', [PIN, a, t, 'QUJD']);
+  await q(db, 'select set_receipt($1,$2,$3,$4)', [PIN, a, t, 'RUZH']); // ganti
+  assert.strictEqual((await q(db, 'select get_receipt($1,$2) r', [PIN, t]))[0].r, 'RUZH');
+  await rejects(db, 'select get_receipt($1,$2)', ['salah', t], /PIN_SALAH/);
+  let st = (await q(db, 'select get_state($1) s', [PIN]))[0].s;
+  assert.deepStrictEqual(st.receipt_ids, [t]);
+  await q(db, 'select set_receipt($1,$2,$3,$4)', [PIN, a, t, '']);
+  st = (await q(db, 'select get_state($1) s', [PIN]))[0].s;
+  assert.deepStrictEqual(st.receipt_ids, []);
+  assert.deepStrictEqual(st.log.slice(0, 3).map((l) => l.action), ['receipt_remove', 'receipt_set', 'receipt_set']);
+  await db.exec('set role anon');
+  await rejects(db, 'select * from receipts', [], /permission denied/);
+});
+
 test('alur lengkap RPC + keamanan', async () => {
   const db = await freshDb(PIN);
   await rejects(db, 'select get_state($1)', ['salah'], /PIN_SALAH/);

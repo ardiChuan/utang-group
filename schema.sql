@@ -56,15 +56,23 @@ create table if not exists public.activity_log (
   at             timestamptz not null default now()
 );
 
+-- Foto nota (JPEG base64, sudah dikompres di HP), maksimal satu per transaksi.
+create table if not exists public.receipts (
+  transaction_id bigint primary key references public.transactions (id) on delete cascade,
+  image          text not null,
+  created_at     timestamptz not null default now()
+);
+
 -- RLS aktif tanpa policy = anon key tidak bisa akses tabel langsung.
 alter table public.settings     enable row level security;
 alter table public.members      enable row level security;
 alter table public.transactions enable row level security;
 alter table public.shares       enable row level security;
 alter table public.activity_log enable row level security;
+alter table public.receipts     enable row level security;
 
 revoke all on public.settings, public.members, public.transactions,
-              public.shares, public.activity_log
+              public.shares, public.activity_log, public.receipts
   from anon, authenticated;
 
 -- ---------- Helper internal ----------
@@ -141,8 +149,43 @@ begin
     'transactions', coalesce((select jsonb_agg(tx_json(t.id) order by t.tx_date desc, t.id desc)
                                 from transactions t where t.deleted_at is null), '[]'::jsonb),
     'log', coalesce((select jsonb_agg(to_jsonb(l) order by l.id desc)
-                       from (select * from activity_log order by id desc limit 200) l), '[]'::jsonb)
+                       from (select * from activity_log order by id desc limit 200) l), '[]'::jsonb),
+    'receipt_ids', coalesce((select jsonb_agg(r.transaction_id)
+                               from receipts r join transactions t on t.id = r.transaction_id
+                              where t.deleted_at is null), '[]'::jsonb)
   );
+end $$;
+
+-- p_image kosong/null = hapus nota.
+create or replace function public.set_receipt(p_pin text, p_actor bigint, p_tx_id bigint, p_image text)
+returns void language plpgsql security definer
+set search_path = public, extensions as $$
+begin
+  perform assert_pin(p_pin);
+  perform assert_actor(p_actor);
+  if not exists (select 1 from transactions where id = p_tx_id and deleted_at is null) then
+    raise exception 'Transaksi tidak ditemukan';
+  end if;
+  if coalesce(p_image, '') = '' then
+    delete from receipts where transaction_id = p_tx_id;
+    if found then
+      insert into activity_log (actor_id, action, transaction_id) values (p_actor, 'receipt_remove', p_tx_id);
+    end if;
+    return;
+  end if;
+  if length(p_image) > 1500000 then raise exception 'Foto nota terlalu besar'; end if;
+  if p_image !~ '^[A-Za-z0-9+/=]+$' then raise exception 'Format foto nota tidak valid'; end if;
+  insert into receipts (transaction_id, image) values (p_tx_id, p_image)
+  on conflict (transaction_id) do update set image = excluded.image, created_at = now();
+  insert into activity_log (actor_id, action, transaction_id) values (p_actor, 'receipt_set', p_tx_id);
+end $$;
+
+create or replace function public.get_receipt(p_pin text, p_tx_id bigint)
+returns text language plpgsql security definer
+set search_path = public, extensions as $$
+begin
+  perform assert_pin(p_pin);
+  return (select image from receipts where transaction_id = p_tx_id);
 end $$;
 
 create or replace function public.add_member(p_pin text, p_actor bigint, p_name text)
@@ -309,7 +352,8 @@ revoke execute on function
   public.update_member(text, bigint, bigint, text, boolean),
   public.save_transaction(text, bigint, bigint, text, bigint, bigint, text, date, jsonb),
   public.delete_transaction(text, bigint, bigint),
-  public.change_pin(text, bigint, text)
+  public.change_pin(text, bigint, text),
+  public.set_receipt(text, bigint, bigint, text), public.get_receipt(text, bigint)
   from public, anon, authenticated;
 
 grant execute on function
@@ -318,7 +362,8 @@ grant execute on function
   public.update_member(text, bigint, bigint, text, boolean),
   public.save_transaction(text, bigint, bigint, text, bigint, bigint, text, date, jsonb),
   public.delete_transaction(text, bigint, bigint),
-  public.change_pin(text, bigint, text)
+  public.change_pin(text, bigint, text),
+  public.set_receipt(text, bigint, bigint, text), public.get_receipt(text, bigint)
   to anon, authenticated;
 
 notify pgrst, 'reload schema';

@@ -11,7 +11,10 @@
     return { seq: 1, members: [], transactions: [], log: [] };
   }
   let db = loadDb();
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (_) {} }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(db)); }
+    catch (_) { throw new Error('Penyimpanan demo penuh (foto nota terlalu banyak).'); }
+  }
   const nextId = () => db.seq++;
   const now = () => new Date().toISOString();
   const fail = (m) => { throw new Error(m); };
@@ -52,7 +55,24 @@
         members: db.members.map((m) => ({ id: m.id, name: m.name, active: m.active })),
         transactions: txs,
         log: db.log.slice().reverse().slice(0, 200),
+        receipt_ids: Object.keys(db.receipts || {}).map(Number).filter((id) => txJson(id)),
       };
+    },
+    set_receipt(a) {
+      assertPin(a.p_pin);
+      assertActor(a.p_actor);
+      if (!txJson(a.p_tx_id)) fail('Transaksi tidak ditemukan');
+      db.receipts = db.receipts || {};
+      if (!a.p_image) {
+        if (db.receipts[a.p_tx_id]) { delete db.receipts[a.p_tx_id]; log(a.p_actor, 'receipt_remove', a.p_tx_id); }
+        return;
+      }
+      db.receipts[a.p_tx_id] = a.p_image;
+      log(a.p_actor, 'receipt_set', a.p_tx_id);
+    },
+    get_receipt(a) {
+      assertPin(a.p_pin);
+      return (db.receipts || {})[a.p_tx_id] || null;
     },
     add_member(a) {
       assertPin(a.p_pin);

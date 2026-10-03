@@ -71,6 +71,7 @@
     split: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M12 4v16M4 12h16"/></svg>',
     debt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
     settlement: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    clip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5l-7.8 7.8a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"/></svg>',
     camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
   };
 
@@ -133,7 +134,7 @@
       const me = S.data.members.find((m) => m.id === S.meId);
       if (!me || !me.active) setMe(null);
       // Form yang belum disentuh ikut daftar anggota terbaru.
-      if (!S.form || (!S.form.id && !S.form.amount)) S.form = newForm(S.form ? S.form.kind : 'split');
+      if (!S.form || (!S.form.id && !S.form.amount && S.form.receipt === undefined)) S.form = newForm(S.form ? S.form.kind : 'split');
     } catch (e) {
       if (e.message !== 'PIN_SALAH') toast(e.message, true);
     } finally {
@@ -166,8 +167,11 @@
       custom: {},
       from: S.meId,
       to: other,
+      hasReceipt: false, // transaksi yang diedit sudah punya nota di server
+      receipt: undefined, // undefined = tidak diubah, base64 = nota baru, '' = hapus
     };
   }
+  const hasReceipt = (id) => !!(S.data && (S.data.receipt_ids || []).includes(id));
 
   function formFromTx(t) {
     const f = newForm(t.kind);
@@ -175,6 +179,7 @@
     f.amount = t.amount;
     f.note = t.note;
     f.date = t.tx_date;
+    f.hasReceipt = hasReceipt(t.id);
     if (t.kind === 'split') {
       f.payer = t.payer_id;
       f.participants = t.shares.map((s) => s.member_id);
@@ -401,11 +406,28 @@
       ${f.id ? '<div class="section-title" style="margin-top:0">Edit transaksi</div>' : ''}
       <div class="seg">${seg}</div>
       ${body}
+      ${receiptField(f)}
       <div class="form-actions">
         ${f.id ? '<button type="button" class="btn ghost" data-act="cancel-edit">Batal</button>' : ''}
         <button type="submit" class="btn">${f.id ? 'Simpan perubahan' : 'Simpan'}</button>
       </div>
     </form>`;
+  }
+
+  function receiptField(f) {
+    const attached = f.receipt ? true : f.receipt === '' ? false : f.hasReceipt;
+    if (!attached) {
+      return `<div class="field"><label class="btn ghost block scan-btn" for="receipt-file">${ICON.clip}<span>Lampirkan foto nota</span></label></div>`;
+    }
+    const thumb = f.receipt
+      ? `<img class="receipt-thumb" src="data:image/jpeg;base64,${f.receipt}" alt="Foto nota">`
+      : `<div class="receipt-thumb kind-ic">${ICON.clip}</div>`;
+    return `<div class="field"><span class="lbl">Nota</span>
+      <div class="card"><div class="row">${thumb}
+        <div class="grow"><div class="title">Nota terlampir</div><div class="sub">${f.receipt ? 'Tersimpan saat kamu Simpan' : 'Sudah tersimpan'}</div></div>
+        <label class="btn ghost sm" for="receipt-file" style="display:inline-flex;align-items:center">Ganti</label>
+        <button type="button" class="btn danger sm" data-act="receipt-remove">Hapus</button>
+      </div></div></div>`;
   }
 
   function splitHint(f) {
@@ -459,7 +481,7 @@
       const eff = myEffect(t);
       html += `<button class="row" data-act="open-tx" data-id="${t.id}">
         <div class="kind-ic">${ICON[t.kind]}</div>
-        <div class="grow"><div class="title">${esc(txTitle(t))}</div><div class="sub">${txSub(t)}</div></div>
+        <div class="grow"><div class="title">${esc(txTitle(t))}${hasReceipt(t.id) ? `<span class="clip-ic" aria-label="ada nota">${ICON.clip}</span>` : ''}</div><div class="sub">${txSub(t)}</div></div>
         <div><div class="amt">${rp(t.amount)}</div>
           ${eff ? `<div class="amt small ${eff > 0 ? 'pos' : 'neg'}">${eff > 0 ? '+' : '−'}${rp(Math.abs(eff))}</div>` : ''}</div>
       </button>`;
@@ -490,6 +512,12 @@
           else what = 'mengubah anggota ' + esc(l.after.name);
           break;
         case 'pin_change': what = 'mengganti PIN grup'; break;
+        case 'receipt_set':
+        case 'receipt_remove': {
+          const t = S.data.transactions.find((x) => x.id === l.transaction_id);
+          what = (l.action === 'receipt_set' ? 'melampirkan nota ke ' : 'menghapus nota dari ') + (t ? describeTxJson(t) : 'transaksi #' + l.transaction_id);
+          break;
+        }
         default: what = esc(l.action);
       }
       return `<div class="row"><div class="grow"><div class="small"><b>${who}</b> ${what}</div>
@@ -543,9 +571,19 @@
         <p class="muted small" style="margin:12px 4px 0">Dicatat ${esc(memberName(t.created_by))}, ${esc(fmtTime(t.created_at))}${
           t.updated_at !== t.created_at && t.updated_by ? `<br>Diubah ${esc(memberName(t.updated_by))}, ${esc(fmtTime(t.updated_at))}` : ''}</p>
         <div class="stack">
+          ${hasReceipt(t.id) ? `<button class="btn ghost scan-btn" data-act="open-receipt" data-id="${t.id}">${ICON.clip}<span>Lihat nota</span></button>` : ''}
           <button class="btn" data-act="edit-tx" data-id="${t.id}">Edit</button>
           <button class="btn danger" data-act="delete-tx" data-id="${t.id}">Hapus</button>
           <button class="btn ghost" data-act="close-sheet">Tutup</button>
+        </div>`;
+    } else if (S.sheet.type === 'receipt') {
+      const t = S.data.transactions.find((x) => x.id === S.sheet.id);
+      const b64 = receiptCache[S.sheet.id];
+      inner = `<h2>Nota${t ? ': ' + esc(txTitle(t)) : ''}</h2>
+        <p class="muted small" style="margin:4px 4px 12px">Cubit untuk zoom.</p>
+        ${b64 ? `<img class="receipt-full" src="data:image/jpeg;base64,${b64}" alt="Foto nota">` : '<div class="empty">Memuat nota…</div>'}
+        <div class="stack">
+          <button class="btn ghost" data-act="open-tx" data-id="${S.sheet.id}">Kembali</button>
         </div>`;
     } else if (S.sheet.type === 'scan') {
       inner = viewScanSheet();
@@ -599,23 +637,35 @@
       </div>`;
   }
 
-  function fileToJpegB64(file) {
+  function loadImage(file) {
     return new Promise((resolve, reject) => {
       const url = URL.createObjectURL(file);
       const img = new Image();
-      img.onload = () => {
-        // Struk panjang & sempit: batasi lebar 1200px, tinggi sampai 4000px.
-        const s = Math.min(1, 1200 / img.naturalWidth, 4000 / img.naturalHeight);
-        const c = document.createElement('canvas');
-        c.width = Math.round(img.naturalWidth * s);
-        c.height = Math.round(img.naturalHeight * s);
-        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        URL.revokeObjectURL(url);
-        resolve(c.toDataURL('image/jpeg', 0.85).split(',')[1]);
-      };
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
       img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Gambar tidak bisa dibaca.')); };
       img.src = url;
     });
+  }
+  // Struk panjang & sempit: batasi lebar, biarkan tinggi lebih besar.
+  function imageToB64(img, maxW, maxH, quality) {
+    const s = Math.min(1, maxW / img.naturalWidth, maxH / img.naturalHeight);
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.naturalWidth * s);
+    c.height = Math.round(img.naturalHeight * s);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', quality).split(',')[1];
+  }
+  const scanB64 = (img) => imageToB64(img, 1200, 4000, 0.85);
+  const receiptB64 = (img) => imageToB64(img, 900, 3000, 0.65); // disimpan, jadi lebih kecil
+
+  async function attachReceipt(file) {
+    try {
+      const img = await loadImage(file);
+      S.form.receipt = receiptB64(img);
+      render();
+    } catch (e) {
+      toast(e.message, true);
+    }
   }
 
   async function runScan(file) {
@@ -623,7 +673,8 @@
     S.scanning = true;
     render();
     try {
-      const image = await fileToJpegB64(file);
+      const img = await loadImage(file);
+      const image = scanB64(img);
       let res;
       try {
         res = await fetch('/api/scan', {
@@ -646,6 +697,7 @@
         date: data.date,
         total: data.total,
         items: data.items.map((it) => ({ name: it.name, qty: it.qty, price: it.price, who: [] })),
+        image: receiptB64(img),
       };
       S.sheet = { type: 'scan' };
     } catch (e) {
@@ -663,7 +715,8 @@
     const shares = scanAlloc();
     if (!shares.length) { toast('Pilih orang untuk minimal satu item.', true); return; }
     const old = S.form || newForm('split');
-    const f = Object.assign(newForm('split'), { id: old.id, payer: old.payer || S.meId });
+    const f = Object.assign(newForm('split'), { id: old.id, payer: old.payer || S.meId, hasReceipt: old.hasReceipt });
+    f.receipt = sc.image;
     f.amount = sc.total;
     f.note = sc.merchant || old.note;
     if (sc.date) f.date = sc.date;
@@ -683,6 +736,28 @@
     e.target.value = '';
     if (file) runScan(file);
   });
+  document.getElementById('receipt-file').addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (file && S.form) attachReceipt(file);
+  });
+
+  // ----- Lihat nota -----
+  const receiptCache = {};
+  async function openReceipt(id) {
+    S.sheet = { type: 'receipt', id };
+    render();
+    if (receiptCache[id]) return;
+    try {
+      const b64 = await rpc('get_receipt', { p_tx_id: id });
+      if (!b64) throw new Error('Nota tidak ditemukan.');
+      receiptCache[id] = b64;
+    } catch (e) {
+      if (e.message !== 'PIN_SALAH') toast(e.message, true);
+      S.sheet = { type: 'tx', id };
+    }
+    if (S.sheet && S.sheet.id === id) render();
+  }
 
   // ---------- Events ----------
   root.addEventListener('click', (e) => {
@@ -718,7 +793,9 @@
       case 'kind': {
         const k = el.dataset.kind;
         const old = S.form;
-        S.form = Object.assign(newForm(k), { id: old.id, amount: old.amount, note: old.note, date: old.date });
+        S.form = Object.assign(newForm(k), {
+          id: old.id, amount: old.amount, note: old.note, date: old.date, hasReceipt: old.hasReceipt, receipt: old.receipt,
+        });
         render();
         break;
       }
@@ -766,6 +843,8 @@
         break;
       }
       case 'scan-apply': applyScan(); break;
+      case 'open-receipt': openReceipt(id); break;
+      case 'receipt-remove': S.form.receipt = ''; render(); break;
       case 'edit-tx': {
         const t = S.data.transactions.find((x) => x.id === id);
         if (!t) break;
@@ -936,9 +1015,21 @@
       try { payload = buildPayload(S.form); }
       catch (err) { toast(err.message, true); return; }
       const editing = !!S.form.id;
+      const receipt = S.form.receipt;
       act(async () => {
-        await rpc('save_transaction', payload);
-        toast(editing ? 'Perubahan disimpan' : 'Tersimpan');
+        const txId = await rpc('save_transaction', payload);
+        let receiptErr = null;
+        if (receipt !== undefined && (receipt || editing)) {
+          try {
+            await rpc('set_receipt', { p_actor: S.meId, p_tx_id: txId, p_image: receipt });
+            delete receiptCache[txId];
+          } catch (e) {
+            if (e.message === 'PIN_SALAH') throw e;
+            receiptErr = e.message;
+          }
+        }
+        if (receiptErr) toast('Transaksi tersimpan, tapi nota gagal: ' + receiptErr, true);
+        else toast(editing ? 'Perubahan disimpan' : 'Tersimpan');
         S.form = newForm(editing ? 'split' : S.form.kind);
         S.tab = editing ? 'riwayat' : 'saldo';
         await load(true);

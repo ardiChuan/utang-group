@@ -8,6 +8,7 @@
     "dev:mock": "node dev/server.mjs --mock",
     "dev:reset": "node dev/server.mjs --reset",
     "dev:prod": "node dev/server.mjs --supabase",
+    "sql:copy": "node dev/copy-migration.mjs",
     "test": "node --test \"test/*.test.*\""
   },
   "devDependencies": {
