@@ -73,7 +73,10 @@
 
   // ---------- Supabase ----------
   const configured = cfg.SUPABASE_URL && !/XXXX/.test(cfg.SUPABASE_URL) && cfg.SUPABASE_ANON_KEY && !/ISI-/.test(cfg.SUPABASE_ANON_KEY);
-  const sb = configured && window.supabase ? window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, { auth: { persistSession: false } }) : null;
+  const demo = !configured && store.get('ug_demo_mode') === '1' && !!window.UtangDemo;
+  const sb = configured && window.supabase
+    ? window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, { auth: { persistSession: false } })
+    : demo ? window.UtangDemo.createClient() : null;
 
   function friendly(msg) {
     if (/PIN_BELUM_DISET/.test(msg)) return 'PIN grup belum diset di Supabase (lihat README).';
@@ -225,7 +228,7 @@
 
   // ---------- Render ----------
   function render() {
-    if (!configured) { root.innerHTML = viewNotConfigured(); return; }
+    if (!sb) { root.innerHTML = viewNotConfigured(); return; }
     if (!S.pin) { root.innerHTML = viewPin(); return; }
     if (!S.data) { root.innerHTML = '<div class="gate"><p class="muted">Memuat…</p></div>'; return; }
     if (!S.meId) { root.innerHTML = viewWho(); return; }
@@ -239,13 +242,14 @@
 
   function viewNotConfigured() {
     return `<div class="gate"><h1>Belum dikonfigurasi</h1>
-      <p>Isi <b>SUPABASE_URL</b> dan <b>SUPABASE_ANON_KEY</b> di <code>config.js</code>, lalu deploy ulang. Lihat README.</p></div>`;
+      <p>Isi <b>SUPABASE_URL</b> dan <b>SUPABASE_ANON_KEY</b> di <code>config.js</code>, lalu deploy ulang. Lihat README.</p>
+      ${window.UtangDemo ? '<button class="btn ghost block" data-act="demo">Coba mode demo</button><p class="small" style="margin-top:8px">Data demo hanya tersimpan di browser ini.</p>' : ''}</div>`;
   }
 
   function viewPin() {
     return `<form class="gate" data-form="pin" autocomplete="off">
       <h1>Utang Grup</h1>
-      <p>Masukkan PIN grup.</p>
+      <p>Masukkan PIN grup.${demo ? ' Mode demo: PIN <b>' + window.UtangDemo.PIN + '</b>' : ''}</p>
       <div class="field"><input class="input" type="password" name="pin" autocomplete="current-password" placeholder="PIN grup" required autofocus></div>
       ${S.gateError ? `<p class="neg small" style="margin:-4px 2px 16px">${esc(S.gateError)}</p>` : ''}
       <button class="btn block" type="submit">Masuk</button>
@@ -280,7 +284,7 @@
     const body = { saldo: viewSaldo, tambah: viewTambah, riwayat: viewRiwayat, anggota: viewAnggota }[S.tab]();
     return `
       <header class="topbar"><div class="wrap">
-        <h1>Utang Grup</h1>
+        <h1>Utang Grup${demo ? ' <span class="badge">DEMO</span>' : ''}</h1>
         <span class="chip">${esc(memberName(S.meId))}</span>
         <button class="icon-btn${S.loading ? ' spin' : ''}" data-act="refresh" aria-label="Muat ulang">${ICON.refresh}</button>
       </div></header>
@@ -514,6 +518,7 @@
         <button class="row" data-act="switch-me"><div class="grow"><div class="title">Ganti pengguna</div><div class="sub">Sekarang: ${esc(memberName(S.meId))}</div></div></button>
         <button class="row" data-act="open-pin"><div class="grow"><div class="title">Ganti PIN grup</div><div class="sub">Semua anggota harus pakai PIN baru</div></div></button>
         <button class="row" data-act="logout"><div class="grow"><div class="title neg">Keluar</div><div class="sub">Hapus PIN dari HP ini</div></div></button>
+        ${demo ? '<button class="row" data-act="exit-demo"><div class="grow"><div class="title neg">Keluar mode demo</div><div class="sub">Hapus semua data demo</div></div></button>' : ''}
       </div>`;
   }
 
@@ -566,6 +571,15 @@
         window.scrollTo(0, 0);
         break;
       case 'refresh': load(true); break;
+      case 'demo': store.set('ug_demo_mode', '1'); location.reload(); break;
+      case 'exit-demo':
+        if (!confirm('Keluar mode demo dan hapus semua data demo?')) break;
+        window.UtangDemo.reset();
+        store.set('ug_demo_mode', null);
+        store.set('ug_pin', null);
+        store.set('ug_me', null);
+        location.reload();
+        break;
       case 'pick-me': setMe(id); S.form = newForm('split'); render(); break;
       case 'switch-me': setMe(null); render(); break;
       case 'logout':
