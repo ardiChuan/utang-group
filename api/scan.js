@@ -57,24 +57,38 @@ async function checkPin(pin) {
   throw Object.assign(new Error('Gagal cek PIN: ' + body.slice(0, 200)), { status: 502 });
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Gemini free tier sering 503 "high demand": coba ulang, lalu pindah ke model cadangan.
+async function callGemini(key, imageB64) {
+  const primary = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+  const fallback = process.env.GEMINI_FALLBACK_MODEL || 'gemini-flash-lite-latest';
+  const attempts = [primary, primary, fallback, fallback];
+  let last;
+  for (let i = 0; i < attempts.length; i++) {
+    if (i) await sleep(i === 1 ? 800 : 400);
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${attempts[i]}:generateContent`, {
+      method: 'POST',
+      headers: { 'x-goog-api-key': key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ inline_data: { mime_type: 'image/jpeg', data: imageB64 } }, { text: PROMPT }] }],
+        generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, temperature: 0 },
+      }),
+    });
+    const body = await r.json().catch(() => ({}));
+    if (r.ok) return body;
+    last = { status: r.status, msg: (body.error && body.error.message) || 'HTTP ' + r.status };
+    if (![500, 503, 429, 404].includes(r.status)) break; // error lain: tidak perlu retry
+  }
+  if (last.status === 429) throw Object.assign(new Error('Kuota Gemini habis, coba lagi nanti.'), { status: 429 });
+  if (last.status === 503 || last.status === 500) throw Object.assign(new Error('Gemini sedang sibuk, coba scan lagi sebentar.'), { status: 503 });
+  throw Object.assign(new Error('Gemini error: ' + last.msg), { status: 502 });
+}
+
 async function readReceipt(imageB64) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw Object.assign(new Error('Server belum dikonfigurasi (GEMINI_API_KEY).'), { status: 500 });
-  const model = process.env.GEMINI_MODEL || 'gemini-flash-latest';
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-    method: 'POST',
-    headers: { 'x-goog-api-key': key, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ inline_data: { mime_type: 'image/jpeg', data: imageB64 } }, { text: PROMPT }] }],
-      generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, temperature: 0 },
-    }),
-  });
-  const body = await r.json().catch(() => ({}));
-  if (!r.ok) {
-    const msg = (body.error && body.error.message) || 'HTTP ' + r.status;
-    const status = r.status === 429 ? 429 : 502;
-    throw Object.assign(new Error(status === 429 ? 'Kuota Gemini habis, coba lagi nanti.' : 'Gemini error: ' + msg), { status });
-  }
+  const body = await callGemini(key, imageB64);
   const text = (((body.candidates || [])[0] || {}).content || {}).parts?.map((p) => p.text || '').join('') || '';
   let data;
   try { data = JSON.parse(text); } catch (_) { throw Object.assign(new Error('Struk tidak terbaca, coba foto ulang.'), { status: 422 }); }
