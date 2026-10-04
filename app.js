@@ -532,7 +532,7 @@
     const bal = computeBalances(members(), S.data.transactions);
     const rows = members().map((m) => {
       const v = bal[m.id] || 0;
-      const lbl = v > 0 ? `<span class="pos">dapat ${rp(v)}</span>` : v < 0 ? `<span class="neg">utang ${rp(-v)}</span>` : 'lunas';
+      const lbl = v > 0 ? `<span class="amt pos" title="dapat">+${rp(v)}</span>` : v < 0 ? `<span class="amt neg" title="utang">−${rp(-v)}</span>` : 'lunas';
       return `<div class="row"${m.active ? '' : ' style="opacity:.55"'}>
         <div class="avatar">${esc(initial(m.id))}</div>
         <div class="grow"><div class="title">${esc(m.name)}${m.active ? '' : ' <span class="badge">nonaktif</span>'}</div><div class="sub">${lbl}</div></div>
