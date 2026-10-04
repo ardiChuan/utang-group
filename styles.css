@@ -79,10 +79,12 @@ svg { flex: none; }
   background: var(--paper); border: var(--bw) solid var(--ink); border-radius: 0;
   box-shadow: var(--sh) var(--sh) 0 var(--ink);
   font: 400 19px var(--f-display);
+  display: flex; align-items: center; gap: 10px;
 }
+.who-list .avatar { width: 36px; height: 36px; background: var(--paper); font-size: 16px; }
 .who-list button:nth-child(4n+1) { background: var(--yellow); }
 .who-list button:nth-child(4n+2) { background: var(--lilac); }
-.who-list button:nth-child(4n+3) { background: var(--paper); }
+.who-list button:nth-child(4n+3) { background: var(--pink); }
 .who-list button:nth-child(4n+4) { background: var(--blue); }
 .who-list button:nth-child(odd) { transform: rotate(-2deg); }
 .who-list button:nth-child(even) { transform: rotate(2deg); }
@@ -177,8 +179,8 @@ button.row:last-child { border-bottom: 0; }
 button.row:active { background: var(--yellow); }
 .sheet .row { background: var(--paper); }
 .row .grow { flex: 1; min-width: 0; }
-.row .title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.row .sub { margin-top: 1px; font-size: 14px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .title { font-weight: 700; overflow-wrap: anywhere; }
+.row .sub { margin-top: 1px; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
 .row .sub.amt { color: var(--ink); text-align: left; }
 .row .sub .amt { display: inline-block; margin-top: 3px; padding: 1px 5px; font-size: 12px; }
 .row:has(.btn.sm + .btn.sm) { gap: 8px; padding-left: 10px; padding-right: 10px; }
@@ -196,7 +198,7 @@ button.row:active { background: var(--yellow); }
 .row:nth-child(6n+5) .avatar { background: var(--orange); }
 .row:nth-child(6n) .avatar { background: var(--lilac); }
 
-.amt { font: 500 14px var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.amt { font: 700 15px var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
 .amt.pos, .amt.neg { display: inline-block; padding: 2px 6px; border: 2px solid var(--ink); color: var(--ink); }
 .amt.pos { background: var(--pos-bg); }
 .amt.neg { background: var(--neg-bg); }
@@ -215,7 +217,7 @@ button.row:active { background: var(--yellow); }
 .hero.pos { background: var(--pos-bg); }
 .hero.neg { background: var(--neg-bg); }
 .hero .label { font: 400 18px var(--f-display); text-transform: uppercase; }
-.hero .big { margin-top: 10px; font: 400 clamp(38px, 12.5vw, 50px)/.95 var(--f-display); letter-spacing: -.03em; overflow-wrap: anywhere; }
+.hero .big { margin-top: 10px; font: 400 clamp(38px, 13vw, 50px)/.95 var(--f-display); letter-spacing: -.03em; overflow-wrap: anywhere; }
 .sheet .hero { transform: rotate(1deg); }
 .sticker {
   position: absolute; top: -26px; right: -6px;
@@ -248,7 +250,8 @@ button.row:active { background: var(--yellow); }
 .btn.danger { background: var(--neg-bg); }
 .btn.sm { min-height: 40px; padding: 0 12px; border-width: 3px; box-shadow: 3px 3px 0 var(--ink); font-size: 13px; }
 .btn.sm:active { transform: translate(3px, 3px); }
-.row .btn.sm:not(.ghost) { background: var(--pink); transform: rotate(-2deg); }
+.row .btn.sm { background: var(--pink); transform: rotate(-2deg); }
+.row .btn.sm:active { transform: rotate(-2deg) translate(3px, 3px); }
 .btn:disabled { opacity: .5; cursor: default; }
 
 .empty { padding: 28px 16px; text-align: center; font-weight: 700; color: var(--muted); }

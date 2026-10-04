@@ -40,8 +40,9 @@ let db = null;
 if (MODE === 'local') {
   const { PGlite } = await import('@electric-sql/pglite');
   const { pgcrypto } = await import('@electric-sql/pglite/contrib/pgcrypto');
-  if (process.env.RESET_DB === '1') fs.rmSync(path.join(ROOT, '.localdb'), { recursive: true, force: true });
-  db = new PGlite(path.join(ROOT, '.localdb'), { extensions: { pgcrypto } });
+  const DB_DIR = process.env.LOCAL_DB_DIR ? path.resolve(process.env.LOCAL_DB_DIR) : path.join(ROOT, '.localdb');
+  if (process.env.RESET_DB === '1') fs.rmSync(DB_DIR, { recursive: true, force: true });
+  db = new PGlite(DB_DIR, { extensions: { pgcrypto } });
   await db.exec(`
     create schema if not exists extensions;
     do $$ begin

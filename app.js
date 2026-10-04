@@ -277,7 +277,7 @@
     return `<div class="gate">
       <h1>Kamu siapa?</h1>
       <p>Pilih nama kamu. Bisa diganti nanti.</p>
-      <div class="who-list">${list.map((m) => `<button data-act="pick-me" data-id="${m.id}">${esc(m.name)}</button>`).join('')}</div>
+      <div class="who-list">${list.map((m) => `<button data-act="pick-me" data-id="${m.id}"><span class="avatar">${esc(initial(m.id))}</span>${esc(m.name)}</button>`).join('')}</div>
       <p style="margin-top:24px"><button class="btn ghost block" data-act="logout">Keluar</button></p>
     </div>`;
   }
