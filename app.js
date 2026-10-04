@@ -481,7 +481,7 @@
       }
       const eff = myEffect(t);
       html += `<button class="row" data-act="open-tx" data-id="${t.id}">
-        <div class="kind-ic">${ICON[t.kind]}</div>
+        <div class="kind-ic k-${t.kind}">${ICON[t.kind]}</div>
         <div class="grow"><div class="title">${esc(txTitle(t))}${hasReceipt(t.id) ? `<span class="clip-ic" aria-label="ada nota">${ICON.clip}</span>` : ''}</div><div class="sub">${txSub(t)}</div></div>
         <div><div class="amt">${rp(t.amount)}</div>
           ${eff ? `<div class="amt small ${eff > 0 ? 'pos' : 'neg'}">${eff > 0 ? '+' : '−'}${rp(Math.abs(eff))}</div>` : ''}</div>
