@@ -296,6 +296,7 @@
         <span class="chip">${esc(memberName(S.meId))}</span>
         <button class="icon-btn${S.loading ? ' spin' : ''}" data-act="refresh" aria-label="Muat ulang">${ICON.refresh}</button>
       </div></header>
+      <div class="marquee" aria-hidden="true"><div>${'UTANG ★ BAYAR ★ LUNAS ★ SPLIT ★ JANGAN KABUR ★ '.repeat(4)}</div></div>
       <main><div class="wrap">${body}</div></main>
       <nav class="tabbar"><div class="wrap">
         ${tabs.map(([k, l, ic]) => `<button data-act="tab" data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ''}>${ic}<span>${l}</span></button>`).join('')}
@@ -308,10 +309,10 @@
     const mine = bal[S.meId] || 0;
     const transfers = simplify(bal);
     const hero = mine > 0
-      ? `<div class="hero pos"><div class="label">Kamu akan dapat</div><div class="big">${rp(mine)}</div></div>`
+      ? `<div class="hero pos"><span class="sticker">CUAN!</span><div class="label">Kamu akan dapat</div><div class="big">${rp(mine)}</div></div>`
       : mine < 0
-        ? `<div class="hero neg"><div class="label">Kamu masih utang</div><div class="big">${rp(-mine)}</div></div>`
-        : `<div class="hero"><div class="label">Saldo kamu</div><div class="big">Lunas</div></div>`;
+        ? `<div class="hero neg"><span class="sticker">WADUH</span><div class="label">Kamu masih utang</div><div class="big">${rp(-mine)}</div></div>`
+        : `<div class="hero"><span class="sticker">AMAN</span><div class="label">Saldo kamu</div><div class="big">Lunas</div></div>`;
 
     const tRows = transfers.length
       ? transfers.map((t, i) => {

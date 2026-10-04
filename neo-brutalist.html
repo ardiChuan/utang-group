@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffd84d">
+  <title>Utang Grup — Dashboard Concept</title>
+  <style>
+    :root {
+      --yellow: #ffdc52;
+      --purple: #7546e8;
+      --purple-dark: #4f2ca8;
+      --ink: #17131d;
+      --paper: #fffdf7;
+      --mint: #a9f1c6;
+      --pink: #ff9eac;
+      --line: 3px solid var(--ink);
+      --shadow: 5px 5px 0 var(--ink);
+      --small-shadow: 3px 3px 0 var(--ink);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background-color: var(--yellow);
+      background-image: radial-gradient(#17131d 1.15px, transparent 1.15px);
+      background-size: 19px 19px;
+      font-family: "Arial Black", "Trebuchet MS", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    button { color: inherit; font: inherit; }
+    .page { max-width: 1220px; min-height: 100vh; margin: auto; padding: 28px 28px 40px; }
+    .topline { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 23px; }
+    .brand { display: flex; align-items: center; gap: 11px; font-size: 17px; font-weight: 1000; letter-spacing: -.04em; text-transform: uppercase; }
+    .brand-mark { width: 38px; height: 38px; display: grid; place-items: center; border: var(--line); background: var(--purple); box-shadow: var(--small-shadow); color: white; font-size: 22px; transform: rotate(-5deg); }
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .pill { display: inline-flex; align-items: center; gap: 8px; border: var(--line); background: var(--paper); padding: 9px 13px; box-shadow: var(--small-shadow); font-size: 12px; font-weight: 900; text-transform: uppercase; }
+    .online-dot { width: 10px; height: 10px; border: 2px solid var(--ink); border-radius: 50%; background: #49d27a; }
+    .avatar { display: grid; place-items: center; flex: 0 0 auto; width: 35px; height: 35px; border: 2px solid var(--ink); background: var(--pink); font-size: 13px; font-weight: 1000; }
+    .layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 24px; align-items: start; }
+    aside { position: sticky; top: 20px; border: var(--line); background: var(--paper); box-shadow: var(--shadow); padding: 15px; }
+    .group-label { margin: 2px 0 13px; color: #6f6875; font: 900 10px/1.3 Arial, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+    .nav { display: grid; gap: 8px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 8px 10px; border: 2px solid transparent; background: transparent; font-size: 12px; font-weight: 1000; text-align: left; text-transform: uppercase; cursor: pointer; }
+    .nav-item.current { border-color: var(--ink); background: var(--purple); box-shadow: var(--small-shadow); color: white; }
+    .nav-icon { width: 22px; font: 1000 19px/1 Arial, sans-serif; text-align: center; }
+    .side-note { margin-top: 30px; padding: 12px; border: 2px dashed var(--ink); background: var(--yellow); font: 700 11px/1.5 Arial, sans-serif; }
+    main { min-width: 0; }
+    .welcome { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 8px 0 23px; }
+    h1 { margin: 0; font-size: clamp(29px, 4vw, 49px); line-height: .98; letter-spacing: -.065em; text-transform: uppercase; }
+    .welcome p { margin: 10px 0 0; font: 700 13px/1.4 Arial, sans-serif; }
+    .primary-btn { min-height: 48px; padding: 11px 16px; border: var(--line); background: var(--purple); box-shadow: var(--shadow); color: white; font-size: 12px; font-weight: 1000; text-transform: uppercase; white-space: nowrap; }
+    .primary-btn span { margin-right: 8px; font-size: 17px; vertical-align: -1px; }
+    .overview { display: grid; grid-template-columns: 1.1fr .9fr; gap: 17px; margin-bottom: 18px; }
+    .card { border: var(--line); background: var(--paper); box-shadow: var(--shadow); }
+    .balance-card { position: relative; min-height: 218px; overflow: hidden; padding: 22px; background: var(--purple); color: white; }
+    .balance-card::after { content: "₫"; position: absolute; right: 6px; bottom: -69px; color: rgba(255,255,255,.13); font-size: 220px; line-height: 1; transform: rotate(-13deg); }
+    .eyebrow { position: relative; z-index: 1; font: 900 10px/1.3 Arial, sans-serif; letter-spacing: .13em; text-transform: uppercase; }
+    .balance-amount { position: relative; z-index: 1; margin: 17px 0 8px; font-size: clamp(34px, 5vw, 57px); font-weight: 1000; line-height: 1; letter-spacing: -.07em; }
+    .balance-caption { position: relative; z-index: 1; font: 700 12px/1.4 Arial, sans-serif; }
+    .balance-chip { position: absolute; z-index: 1; right: 20px; top: 20px; padding: 6px 8px; border: 2px solid white; background: var(--yellow); color: var(--ink); font-size: 10px; font-weight: 1000; transform: rotate(4deg); }
+    .stats { display: grid; grid-template-rows: 1fr 1fr; gap: 17px; }
+    .stat-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 99px; padding: 16px 18px; }
+    .stat-label { font: 900 10px/1.4 Arial, sans-serif; letter-spacing: .09em; text-transform: uppercase; }
+    .stat-number { margin-top: 5px; font-size: 26px; font-weight: 1000; line-height: 1; letter-spacing: -.05em; }
+    .stat-symbol { display: grid; place-items: center; width: 43px; height: 43px; border: 2px solid var(--ink); background: var(--yellow); font: 1000 22px Arial, sans-serif; transform: rotate(4deg); }
+    .settle-card { padding: 18px 19px 14px; }
+    .section-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+    h2 { margin: 0; font-size: 16px; line-height: 1.1; letter-spacing: -.04em; text-transform: uppercase; }
+    .count { padding: 5px 8px; border: 2px solid var(--ink); background: var(--yellow); font-size: 10px; font-weight: 1000; text-transform: uppercase; }
+    .settle-row { display: grid; grid-template-columns: minmax(0,1fr) auto auto; align-items: center; gap: 11px; padding: 12px 0; border-top: 2px solid var(--ink); }
+    .people { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .people .avatar { width: 31px; height: 31px; font-size: 11px; }
+    .avatar.purple { background: #c7adff; }
+    .avatar.green { background: var(--mint); }
+    .avatar.orange { background: #ffb174; }
+    .person-name { overflow: hidden; font-size: 11px; font-weight: 1000; text-overflow: ellipsis; white-space: nowrap; }
+    .arrow { font: 1000 17px Arial, sans-serif; }
+    .money { font-size: 13px; font-weight: 1000; white-space: nowrap; }
+    .pay-btn { padding: 7px 9px; border: 2px solid var(--ink); background: var(--mint); box-shadow: 2px 2px 0 var(--ink); font-size: 9px; font-weight: 1000; text-transform: uppercase; }
+    .bottom-grid { display: grid; grid-template-columns: 1.13fr .87fr; gap: 17px; margin-top: 18px; }
+    .activity-card, .members-card { padding: 18px 19px; }
+    .text-link { border: 0; background: transparent; color: var(--purple-dark); font: 1000 10px Arial, sans-serif; text-decoration: underline; text-underline-offset: 3px; text-transform: uppercase; }
+    .activity-row { display: grid; grid-template-columns: 35px minmax(0,1fr) auto; align-items: center; gap: 10px; padding: 11px 0; border-top: 2px solid var(--ink); }
+    .activity-icon { display: grid; place-items: center; width: 34px; height: 34px; border: 2px solid var(--ink); background: var(--pink); font-size: 16px; }
+    .activity-icon.yellow { background: var(--yellow); }
+    .activity-title { font-size: 11px; font-weight: 1000; }
+    .activity-sub { margin-top: 3px; color: #6f6875; font: 700 10px/1.3 Arial, sans-serif; }
+    .activity-amount { font-size: 11px; font-weight: 1000; white-space: nowrap; }
+    .members-list { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .member { display: flex; align-items: center; gap: 7px; min-width: 0; padding: 8px; border: 2px solid var(--ink); background: white; }
+    .member .avatar { width: 28px; height: 28px; font-size: 10px; }
+    .member-name { overflow: hidden; font-size: 10px; font-weight: 1000; text-overflow: ellipsis; white-space: nowrap; }
+    .member-state { display: block; margin-top: 2px; color: #6f6875; font: 700 9px Arial, sans-serif; }
+    .mobile-nav { display: none; }
+    .mobile-nav button { display: grid; justify-items: center; gap: 3px; padding: 3px; border: 0; background: transparent; font-size: 8px; font-weight: 1000; text-transform: uppercase; cursor: pointer; }
+    .mobile-nav button.selected { color: var(--purple-dark); }
+    .form-card { padding: 20px; }
+    .mock-form { display: grid; gap: 14px; max-width: 650px; }
+    .mock-form label { display: grid; gap: 6px; font: 900 11px Arial, sans-serif; text-transform: uppercase; }
+    .mock-form input, .mock-form select { width: 100%; min-height: 44px; padding: 9px 11px; border: 2px solid var(--ink); border-radius: 0; background: white; color: var(--ink); font: 700 14px Arial, sans-serif; }
+    .mock-form fieldset { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; border: 2px solid var(--ink); }
+    .mock-form .seg { display: flex; flex-wrap: wrap; gap: 8px; border: 0; padding: 0; }
+    .mock-form .seg button { cursor: pointer; }
+    .mock-form .seg button[aria-pressed="true"] { background: var(--purple); color: white; }
+    .mock-form legend { padding: 0 5px; font: 900 10px Arial, sans-serif; text-transform: uppercase; }
+    .check { display: flex; align-items: center; gap: 5px; font: 700 11px Arial, sans-serif; }
+    .check input { width: 16px; min-height: 16px; }
+    .notice { margin: 0 0 12px; padding: 12px; border: 2px dashed var(--ink); background: var(--yellow); font: 700 12px/1.5 Arial, sans-serif; }
+    .transaction { width: 100%; border: 0; border-top: 2px solid var(--ink); background: transparent; text-align: left; cursor: pointer; }
+    .member-action { padding: 5px 7px; border: 2px solid var(--ink); background: var(--yellow); font-size: 9px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+    .toast { position: fixed; z-index: 10; right: 20px; bottom: 20px; max-width: calc(100vw - 40px); padding: 12px 16px; border: var(--line); background: var(--ink); box-shadow: var(--shadow); color: white; font: 900 12px Arial, sans-serif; opacity: 0; pointer-events: none; transform: translateY(10px); transition: .18s ease; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    @media (max-width: 760px) {
+      .page { padding: 15px 14px 94px; }
+      .topline { margin-bottom: 18px; }
+      .brand { font-size: 14px; }
+      .brand-mark { width: 34px; height: 34px; }
+      .pill { padding: 7px 9px; font-size: 9px; }
+      .top-actions .avatar { width: 32px; height: 32px; }
+      .layout { display: block; }
+      aside { display: none; }
+      .welcome { align-items: start; margin: 9px 0 20px; }
+      .welcome p { font-size: 11px; }
+      .primary-btn { min-height: 43px; padding: 9px 11px; font-size: 10px; box-shadow: 3px 3px 0 var(--ink); }
+      .overview { grid-template-columns: 1fr; gap: 12px; margin-bottom: 13px; }
+      .balance-card { min-height: 184px; padding: 19px; box-shadow: 4px 4px 0 var(--ink); }
+      .balance-amount { font-size: clamp(38px, 11vw, 51px); }
+      .stats { grid-template-columns: 1fr 1fr; grid-template-rows: none; gap: 12px; }
+      .stat-card { min-height: 84px; padding: 12px; box-shadow: 4px 4px 0 var(--ink); }
+      .stat-label { font-size: 8px; }
+      .stat-number { font-size: 21px; }
+      .stat-symbol { width: 34px; height: 34px; font-size: 18px; }
+      .bottom-grid { grid-template-columns: 1fr; gap: 13px; margin-top: 13px; }
+      .settle-card, .activity-card, .members-card { padding: 15px; box-shadow: 4px 4px 0 var(--ink); }
+      h2 { font-size: 14px; }
+      .settle-row { grid-template-columns: minmax(0,1fr) auto; gap: 7px; }
+      .settle-row .pay-btn { grid-column: 2; grid-row: 2; justify-self: end; margin-top: -3px; }
+      .settle-row .money { grid-column: 2; grid-row: 1; }
+      .people { grid-column: 1; grid-row: 1 / span 2; }
+      .person-name { font-size: 10px; }
+      .mobile-nav { position: fixed; z-index: 3; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(4,1fr); padding: 8px 7px calc(8px + env(safe-area-inset-bottom)); border-top: var(--line); background: var(--paper); }
+      .toast { right: 14px; bottom: calc(75px + env(safe-area-inset-bottom)); }
+      .mobile-nav b { font: 1000 17px/1 Arial, sans-serif; }
+    }
+    @media (max-width: 390px) {
+      .welcome { display: block; }
+      .welcome .primary-btn { margin-top: 15px; }
+      .pill { gap: 5px; }
+      .settle-row { gap: 5px; }
+      .people { gap: 5px; }
+      .people .avatar { width: 27px; height: 27px; }
+      .money { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topline">
+      <div class="brand"><span class="brand-mark">Rp</span> Utang Grup</div>
+      <div class="top-actions">
+        <div class="pill"><span class="online-dot"></span> Grup aktif</div>
+        <div class="avatar purple" aria-label="Profil Dita">D</div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside aria-label="Navigasi utama">
+        <div class="group-label">Ruang grup</div>
+        <nav class="nav">
+          <button class="nav-item current" data-tab="saldo"><span class="nav-icon">▦</span> Dashboard</button>
+          <button class="nav-item" data-tab="tambah"><span class="nav-icon">＋</span> Tambah transaksi</button>
+          <button class="nav-item" data-tab="riwayat"><span class="nav-icon">↺</span> Riwayat</button>
+          <button class="nav-item" data-tab="anggota"><span class="nav-icon">♧</span> Anggota</button>
+        </nav>
+        <div class="side-note"><strong>HEI, DITA!</strong><br>Semua pengeluaran grup ada di satu tempat. Nggak perlu hitung manual lagi ✳</div>
+      </aside>
+
+      <main id="main-content">
+        <section class="welcome">
+          <div>
+            <h1>Halo, Dita! ✳</h1>
+            <p>Ini ringkasan utang grupmu hari ini.</p>
+          </div>
+          <button class="primary-btn" data-tab="tambah"><span>＋</span> Catat transaksi</button>
+        </section>
+
+        <section class="overview" aria-label="Ringkasan saldo">
+          <article class="card balance-card">
+            <span class="balance-chip">POSISI KAMU</span>
+            <div class="eyebrow">Saldo bersih kamu</div>
+            <div class="balance-amount">+Rp 85.000</div>
+            <div class="balance-caption">Yay! Kamu akan menerima uang dari teman grup.</div>
+          </article>
+          <div class="stats">
+            <article class="card stat-card">
+              <div><div class="stat-label">Perlu dibayar</div><div class="stat-number">3 <span style="font-size:12px">transaksi</span></div></div>
+              <div class="stat-symbol">↗</div>
+            </article>
+            <article class="card stat-card">
+              <div><div class="stat-label">Total pengeluaran grup</div><div class="stat-number">Rp 640rb</div></div>
+              <div class="stat-symbol" style="background:var(--mint)">↗</div>
+            </article>
+          </div>
+        </section>
+
+        <section class="card settle-card">
+          <div class="section-head">
+            <h2>💸 Biar cepat beres</h2>
+            <span class="count">3 transfer</span>
+          </div>
+          <div class="settle-row">
+            <div class="people"><span class="avatar orange">A</span><span class="person-name">Andi</span><span class="arrow">→</span><span class="avatar purple">D</span><span class="person-name">Dita</span></div>
+            <span class="money">Rp 60.000</span><button class="pay-btn" data-settle="Andi|Dita|60000">Tandai lunas</button>
+          </div>
+          <div class="settle-row">
+            <div class="people"><span class="avatar" style="background:var(--pink)">B</span><span class="person-name">Bimo</span><span class="arrow">→</span><span class="avatar purple">D</span><span class="person-name">Dita</span></div>
+            <span class="money">Rp 25.000</span><button class="pay-btn" data-settle="Bimo|Dita|25000">Tandai lunas</button>
+          </div>
+          <div class="settle-row">
+            <div class="people"><span class="avatar" style="background:var(--pink)">B</span><span class="person-name">Bimo</span><span class="arrow">→</span><span class="avatar green">R</span><span class="person-name">Rani</span></div>
+            <span class="money">Rp 25.000</span><button class="pay-btn" data-settle="Bimo|Rani|25000">Tandai lunas</button>
+          </div>
+        </section>
+
+        <div class="bottom-grid">
+          <section class="card activity-card">
+            <div class="section-head"><h2>Aktivitas terbaru</h2><button class="text-link" data-tab="riwayat">Lihat semua →</button></div>
+            <div class="activity-row">
+              <div class="activity-icon">🍜</div>
+              <div><div class="activity-title">Makan siang bareng</div><div class="activity-sub">Andi bayar · 4 orang · 2 jam lalu</div></div>
+              <div class="activity-amount">Rp 240.000</div>
+            </div>
+            <div class="activity-row">
+              <div class="activity-icon yellow">🚕</div>
+              <div><div class="activity-title">Taksi pulang</div><div class="activity-sub">Dita bayar · 2 orang · Kemarin</div></div>
+              <div class="activity-amount">Rp 75.000</div>
+            </div>
+            <div class="activity-row">
+              <div class="activity-icon" style="background:var(--mint)">✓</div>
+              <div><div class="activity-title">Bayar utang ke Rani</div><div class="activity-sub">Bimo · Kemarin</div></div>
+              <div class="activity-amount">Rp 30.000</div>
+            </div>
+          </section>
+
+          <section class="card members-card">
+            <div class="section-head"><h2>Geng kamu</h2><span class="count">4 orang</span></div>
+            <div class="members-list">
+              <div class="member"><span class="avatar purple">D</span><div class="member-name">Dita<span class="member-state">Kamu · +85rb</span></div></div>
+              <div class="member"><span class="avatar orange">A</span><div class="member-name">Andi<span class="member-state">Utang 60rb</span></div></div>
+              <div class="member"><span class="avatar green">R</span><div class="member-name">Rani<span class="member-state">Dapat 25rb</span></div></div>
+              <div class="member"><span class="avatar" style="background:var(--pink)">B</span><div class="member-name">Bimo<span class="member-state">Lunas ✨</span></div></div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+  <nav class="mobile-nav" aria-label="Navigasi bawah">
+    <button class="selected" data-tab="saldo"><b>▦</b>Dashboard</button><button data-tab="tambah"><b>＋</b>Tambah</button><button data-tab="riwayat"><b>↺</b>Riwayat</button><button data-tab="anggota"><b>♧</b>Anggota</button>
+  </nav>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    (() => {
+      const members = [
+        { name: 'Dita', active: true, color: 'purple' },
+        { name: 'Andi', active: true, color: 'orange' },
+        { name: 'Rani', active: true, color: 'green' },
+        { name: 'Bimo', active: true, color: '' },
+      ];
+      const balances = { Dita: 85000, Andi: -60000, Rani: 25000, Bimo: -50000 };
+      const activities = [
+        { icon: '🍜', title: 'Makan siang bareng', detail: 'Andi bayar · 4 orang · 2 jam lalu', amount: 240000 },
+        { icon: '🚕', title: 'Taksi pulang', detail: 'Dita bayar · 2 orang · Kemarin', amount: 75000 },
+        { icon: '✓', title: 'Bayar utang ke Rani', detail: 'Bimo · Kemarin', amount: 30000 },
+      ];
+      const main = document.getElementById('main-content');
+      const toastEl = document.getElementById('toast');
+      const nf = new Intl.NumberFormat('id-ID');
+      let tab = 'saldo';
+      let kind = 'split';
+      let toastTimer;
+      const rp = (amount) => 'Rp ' + nf.format(Math.abs(amount));
+      const esc = (value) => String(value).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+      const activeMembers = () => members.filter((m) => m.active);
+      const avatar = (member) => `<span class="avatar ${member.color}" aria-hidden="true">${esc(member.name[0].toUpperCase())}</span>`;
+      const short = (amount) => `${amount < 0 ? 'Utang ' : amount > 0 ? 'Dapat ' : ''}${rp(amount)}`;
+
+      function showToast(message) {
+        toastEl.textContent = message;
+        toastEl.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1900);
+      }
+      function transfers() {
+        const credits = Object.entries(balances).filter(([, n]) => n > 0).map(([name, n]) => [name, n]).sort((a, b) => b[1] - a[1]);
+        const debts = Object.entries(balances).filter(([, n]) => n < 0).map(([name, n]) => [name, -n]).sort((a, b) => b[1] - a[1]);
+        const result = [];
+        let i = 0, j = 0;
+        while (i < debts.length && j < credits.length) {
+          const amount = Math.min(debts[i][1], credits[j][1]);
+          result.push({ from: debts[i][0], to: credits[j][0], amount });
+          debts[i][1] -= amount; credits[j][1] -= amount;
+          if (!debts[i][1]) i++;
+          if (!credits[j][1]) j++;
+        }
+        return result;
+      }
+      function transferRow(item) {
+        const from = members.find((m) => m.name === item.from) || { name: item.from, color: '' };
+        const to = members.find((m) => m.name === item.to) || { name: item.to, color: '' };
+        return `<div class="settle-row"><div class="people">${avatar(from)}<span class="person-name">${esc(item.from)}</span><span class="arrow">→</span>${avatar(to)}<span class="person-name">${esc(item.to)}</span></div><span class="money">${rp(item.amount)}</span><button class="pay-btn" data-settle="${esc(item.from)}|${esc(item.to)}|${item.amount}">Tandai lunas</button></div>`;
+      }
+      function memberTile(member) {
+        const amount = balances[member.name] || 0;
+        return `<div class="member" ${member.active ? '' : 'style="opacity:.55"'}>${avatar(member)}<div class="member-name">${esc(member.name)}<span class="member-state">${member.name === 'Dita' ? 'Kamu · ' : ''}${short(amount)}</span></div></div>`;
+      }
+      function activityRow(item) {
+        return `<div class="activity-row"><div class="activity-icon">${esc(item.icon)}</div><div><div class="activity-title">${esc(item.title)}</div><div class="activity-sub">${esc(item.detail)}</div></div><div class="activity-amount">${rp(item.amount)}</div></div>`;
+      }
+      function dashboard() {
+        const myBalance = balances.Dita || 0;
+        const transferList = transfers();
+        const transferHtml = transferList.length ? transferList.map(transferRow).join('') : '<p class="notice">Semua sudah lunas. Waktunya traktir diri sendiri 🎉</p>';
+        return `<section class="welcome"><div><h1>Halo, Dita! ✳</h1><p>Ini ringkasan utang grupmu hari ini.</p></div><button class="primary-btn" data-tab="tambah"><span>＋</span> Catat transaksi</button></section>
+          <section class="overview" aria-label="Ringkasan saldo"><article class="card balance-card"><span class="balance-chip">POSISI KAMU</span><div class="eyebrow">Saldo bersih kamu</div><div class="balance-amount">${myBalance > 0 ? '+' : myBalance < 0 ? '−' : ''}${rp(myBalance)}</div><div class="balance-caption">${myBalance > 0 ? 'Yay! Kamu akan menerima uang dari teman grup.' : myBalance < 0 ? 'Kamu masih perlu membayar teman grup.' : 'Semua saldo kamu sudah beres.'}</div></article>
+          <div class="stats"><article class="card stat-card"><div><div class="stat-label">Perlu dibayar</div><div class="stat-number">${transferList.length} <span style="font-size:12px">transfer</span></div></div><div class="stat-symbol">↗</div></article><article class="card stat-card"><div><div class="stat-label">Total pengeluaran grup</div><div class="stat-number">${rp(activities.reduce((sum, x) => sum + x.amount, 0))}</div></div><div class="stat-symbol" style="background:var(--mint)">↗</div></article></div></section>
+          <section class="card settle-card"><div class="section-head"><h2>💸 Biar cepat beres</h2><span class="count">${transferList.length} transfer</span></div>${transferHtml}</section>
+          <div class="bottom-grid"><section class="card activity-card"><div class="section-head"><h2>Aktivitas terbaru</h2><button class="text-link" data-tab="riwayat">Lihat semua →</button></div>${activities.slice(0, 3).map(activityRow).join('')}</section>
+          <section class="card members-card"><div class="section-head"><h2>Geng kamu</h2><button class="count" data-tab="anggota">${members.length} orang</button></div><div class="members-list">${members.map(memberTile).join('')}</div></section></div>`;
+      }
+      function formPage() {
+        const active = activeMembers();
+        const options = (selected) => active.map((m) => `<option value="${esc(m.name)}" ${m.name === selected ? 'selected' : ''}>${esc(m.name)}</option>`).join('');
+        let fields = '';
+        if (kind === 'split') {
+          fields = `<label>Dibayar oleh<select name="payer">${options('Dita')}</select></label><fieldset><legend>Dibagi rata ke</legend>${active.map((m) => `<label class="check"><input type="checkbox" name="participants" value="${esc(m.name)}" checked> ${esc(m.name)}</label>`).join('')}</fieldset>`;
+        } else {
+          fields = `<label>${kind === 'debt' ? 'Siapa yang utang' : 'Siapa yang membayar'}<select name="from">${options('Andi')}</select></label><label>${kind === 'debt' ? 'Utang ke siapa' : 'Bayar ke siapa'}<select name="to">${options('Dita')}</select></label>`;
+        }
+        return `<section class="welcome"><div><h1>Catat transaksi</h1><p>Tambah pengeluaran atau catat utang grup.</p></div></section><section class="card form-card"><form class="mock-form" id="transaction-form"><div class="seg"><button type="button" class="count" data-kind="split" aria-pressed="${kind === 'split'}">Split bill</button><button type="button" class="count" data-kind="debt" aria-pressed="${kind === 'debt'}">Utang</button><button type="button" class="count" data-kind="settlement" aria-pressed="${kind === 'settlement'}">Bayar utang</button></div>${fields}<label>Jumlah (Rp)<input name="amount" type="number" min="1" step="1" placeholder="Contoh: 125000" required></label><label>Keterangan<input name="note" maxlength="120" placeholder="Makan malam, bensin, ..." required></label><button class="primary-btn" type="submit"><span>＋</span> Simpan transaksi</button></form></section>`;
+      }
+      function historyPage() {
+        return `<section class="welcome"><div><h1>Riwayat grup</h1><p>Transaksi terbaru yang tercatat di grup.</p></div></section><section class="card activity-card"><div class="section-head"><h2>Semua aktivitas</h2><span class="count">${activities.length} catatan</span></div>${activities.map(activityRow).join('')}</section>`;
+      }
+      function membersPage() {
+        const rows = members.map((m) => `<div class="member" style="grid-column:1/-1;justify-content:space-between;${m.active ? '' : 'opacity:.55'}">${avatar(m)}<div class="member-name" style="flex:1">${esc(m.name)}<span class="member-state">${short(balances[m.name] || 0)}${m.active ? '' : ' · nonaktif'}</span></div>${m.name !== 'Dita' ? `<button class="member-action" data-member="${esc(m.name)}">${m.active ? 'Nonaktifkan' : 'Aktifkan'}</button>` : '<span class="count">Kamu</span>'}</div>`).join('');
+        return `<section class="welcome"><div><h1>Anggota grup</h1><p>Kelola anggota dan lihat posisi saldo mereka.</p></div></section><section class="card members-card"><div class="members-list">${rows}</div><form class="mock-form" id="member-form" style="margin-top:18px"><label>Tambah anggota<input name="name" maxlength="40" placeholder="Nama anggota" required></label><button class="primary-btn" type="submit"><span>＋</span> Tambah anggota</button></form></section>`;
+      }
+      function render() {
+        main.innerHTML = tab === 'saldo' ? dashboard() : tab === 'tambah' ? formPage() : tab === 'riwayat' ? historyPage() : membersPage();
+        document.querySelectorAll('[data-tab]').forEach((el) => {
+          const selected = el.dataset.tab === tab;
+          if (el.classList.contains('nav-item')) el.classList.toggle('current', selected);
+          if (el.closest('.mobile-nav')) el.classList.toggle('selected', selected);
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      function recordTransaction(form) {
+        const data = new FormData(form);
+        const amount = Number(data.get('amount'));
+        const note = String(data.get('note') || '').trim();
+        if (!Number.isFinite(amount) || amount <= 0 || !note) return showToast('Isi jumlah dan keterangan dulu');
+        if (kind === 'split') {
+          const payer = String(data.get('payer'));
+          const participants = data.getAll('participants').map(String);
+          if (!participants.length) return showToast('Pilih minimal satu anggota');
+          balances[payer] += amount;
+          participants.forEach((name, index) => {
+            const share = Math.floor(amount / participants.length) + (index < amount % participants.length ? 1 : 0);
+            balances[name] -= share;
+          });
+          activities.unshift({ icon: '🧾', title: note, detail: `${payer} bayar · ${participants.length} orang · baru saja`, amount });
+        } else {
+          const from = String(data.get('from'));
+          const to = String(data.get('to'));
+          if (from === to) return showToast('Pilih dua anggota yang berbeda');
+          balances[from] += kind === 'debt' ? -amount : amount;
+          balances[to] += kind === 'debt' ? amount : -amount;
+          activities.unshift({ icon: kind === 'debt' ? '↗' : '✓', title: note, detail: `${from} ${kind === 'debt' ? 'utang ke' : 'bayar ke'} ${to} · baru saja`, amount });
+        }
+        tab = 'saldo'; render(); showToast('Transaksi tersimpan');
+      }
+
+      document.addEventListener('click', (event) => {
+        const tabButton = event.target.closest('[data-tab]');
+        if (tabButton) { tab = tabButton.dataset.tab; render(); return; }
+        const kindButton = event.target.closest('[data-kind]');
+        if (kindButton) { kind = kindButton.dataset.kind; render(); return; }
+        const settleButton = event.target.closest('[data-settle]');
+        if (settleButton) {
+          const [from, to, rawAmount] = settleButton.dataset.settle.split('|');
+          const amount = Number(rawAmount);
+          balances[from] = (balances[from] || 0) + amount;
+          balances[to] = (balances[to] || 0) - amount;
+          activities.unshift({ icon: '✓', title: 'Pelunasan utang', detail: `${from} bayar ke ${to} · baru saja`, amount });
+          render(); showToast('Pelunasan dicatat'); return;
+        }
+        const memberButton = event.target.closest('[data-member]');
+        if (memberButton) {
+          const member = members.find((m) => m.name === memberButton.dataset.member);
+          member.active = !member.active;
+          render(); showToast(`${member.name} ${member.active ? 'diaktifkan' : 'dinonaktifkan'}`);
+        }
+      });
+      document.addEventListener('submit', (event) => {
+        if (event.target.id === 'transaction-form') { event.preventDefault(); recordTransaction(event.target); }
+        if (event.target.id === 'member-form') {
+          event.preventDefault();
+          const name = String(new FormData(event.target).get('name') || '').trim();
+          if (!name) return;
+          if (members.some((m) => m.name.toLowerCase() === name.toLowerCase())) return showToast('Nama anggota sudah ada');
+          members.push({ name, active: true, color: ['purple', 'orange', 'green', ''][members.length % 4] });
+          balances[name] = 0; render(); showToast(`${name} ditambahkan`);
+        }
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>
